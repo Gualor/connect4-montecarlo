@@ -32,7 +32,7 @@ As previously mentioned, this algorithm is composed of four total steps:
 
 When the given time expires, the algorithm returns the move that leads to the child of the root node who has the largest number of visits, meaning that this move has been choosen most of the times during simulations as it allowed to reach winning states with more probability than the other nodes in the first layer.
 
-<img src="images/montecarlo_algorithm.png" alt="Monte Carlo Tree Search algorithm">
+<p align="center"><img src="images/montecarlo_algorithm.png" alt="Monte Carlo Tree Search algorithm"></p>
 
 ## Upper Bounds applied to Trees (UCT)
 The main difficulty in selecting child nodes in the selection step, is maintaining some balance between the exploitation of the high average win rate to choose the most promising nodes right away, and the exploration of moves with few simulations as, of course, in unexplored path could resides the best winning move. The UCT value for a node is composed by two terms:
@@ -44,6 +44,11 @@ The main difficulty in selecting child nodes in the selection step, is maintaini
 - **Exploration term**: This term is higher for moves that has few simulations (meaning we should visit an unexplored node as we are not sure about its winning rate);
 
 The correct balancing of this two behaviours can not only increase the performance but also increase the confidence about the probability estimation given by MCTS algorithm.
+
+## Contacts
+If you have any issues and/or questions don't hesitate to contact me at the e-mail address provided below. This was just a fun project and any suggestions to improve the AI will be welcomed as well.
+
+lorenzo.gualniera@gmail.com
 
 ## Screenshots
 <p>
