@@ -5,13 +5,19 @@ from queue import Queue
 import pygame
 import os
 
-# CONSTANTS
 
+# Screen resolution
 WIN_SIZE = (W_WIDTH, W_HEIGHT) = (800, 600)
+
+# MCTS move computation time
 PROCESS_TIME = 5
+
+# Frame rate
 FPS = 30
 
 
+# Run this script to play Connect 4 against Monte Carlo AI
+# with drawn game graphics in dedicated window
 if __name__ == "__main__":
 
     # Initialize stuff
