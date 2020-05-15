@@ -16,7 +16,9 @@ For further optimization an Upper Confidence bounds applied to Trees (UCT) funct
 The coding of this implementation (aside from having a theoretical schema of the algorithm) has been done by myself from scratch without using available libraries and without looking up similar implementations in order to be more challenging for myself and to have a better understanting of the algorithm functioning as a whole.
 
 ## MCTS algorithm explanation
-This AI algorithm is really a search algorithm that computes in advance possible states (board configurations) reachable by following the moves allowed by the game rules. While a simple brute force solution with no apriori knowledge (by using for example Breadth First Search) would look up in the worst case 4531985219092 board states, MCTS cut down this search by choosing to explore more promising nodes first based on its estimates of the UCT value.
+This AI algorithm is really a search algorithm that computes in advance possible states (board configurations) reachable by following the moves allowed by the game rules. While a simple brute force solution with no apriori knowledge (by using for example [Breadth First Search](https://en.wikipedia.org/wiki/Breadth-first_search)) would look up in the worst case 4531985219092 board states, MCTS cut down this search by choosing to explore more promising nodes first based on its estimates of the UCT value.
+
+<p align="center"><img src="images/connect4_tree.png" alt="Connect 4 state tree"></p>
 
 As previously mentioned, this algorithm is composed of four total steps:
 
@@ -30,18 +32,22 @@ As previously mentioned, this algorithm is composed of four total steps:
 
 When the given time expires, the algorithm returns the move that leads to the child of the root node who has the largest number of visits, meaning that this move has been choosen most of the times during simulations as it allowed to reach winning states with more probability than the other nodes in the first layer.
 
+<img src="images/montecarlo_algorithm.png" alt="Monte Carlo Tree Search algorithm">
+
 ## Upper Bounds applied to Trees (UCT)
 The main difficulty in selecting child nodes in the selection step, is maintaining some balance between the exploitation of the high average win rate to choose the most promising nodes right away, and the exploration of moves with few simulations as, of course, in unexplored path could resides the best winning move. The UCT value for a node is composed by two terms:
+
+<p align="center"><img height="120" src="images/UCT_index.png" alt="UCT index formula"></p>
+
 - **Exploitation term**: This term estimates the pure average winning rate by choosing to go down that node (but this doesn't account for how much realiable the estimate is, the node could be explored just ones);
+
 - **Exploration term**: This term is higher for moves that has few simulations (meaning we should visit an unexplored node as we are not sure about its winning rate);
-
-
 
 The correct balancing of this two behaviours can not only increase the performance but also increase the confidence about the probability estimation given by MCTS algorithm.
 
 ## Screenshots
 <p>
-<img style="float: left" height="325" src="images/img1.png" alt="Screenshot 1">
-<img style="float: left" height="325" src="images/img2.png" alt="Screenshot 2">
+<img style="float: left" height="342" src="images/img1.png" alt="Screenshot 1">
+<img style="float: left" height="342" src="images/img2.png" alt="Screenshot 2">
 </p>
 
