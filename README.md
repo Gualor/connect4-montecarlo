@@ -1,14 +1,15 @@
 # connect4-montecarlo
-Connect 4 board game implementation with AI opponent that uses Monte Carlo Tree Search algorithm.
+Connect 4 AI using Monte Carlo Tree Search algorithm.
 
 In this project the popular board game of [Connect Four](https://en.wikipedia.org/wiki/Connect_Four) has been designed and implemented by using the Pygame framework. The game is designed based on the classic boxed version of the game which is played on a 7x6 board. The Artificial Intelligence (AI) behind the opponent's moves uses the [Monte Carlo Tree Search](https://en.wikipedia.org/wiki/Monte_Carlo_tree_search) algorithm (MCTS) which is one of the first heuristic search that doesn't require apriori knoledge of the game to compute an heuristic function (like many other classic AI algorithms such as [Minimax](https://en.wikipedia.org/wiki/Minimax)). The MCTS algorithm estimates winning probabilities of board states based on random simulations, the more time the algorithm can run, the more accurate the prediction are.
 
 ## Aim of the project
 The aim for this project was to implement the MCTS algorithm on a fairly simple game to investigate the true potential of its capabilities in regards of how much time the program is allowed to "think" in advance for a move. The algorithm has been implemented following the classic four steps of:
->1. Selection;
->2. Expansion;
->3. Simulation;
->4. Backpropagation;
+
+1. Selection;
+2. Expansion;
+3. Simulation;
+4. Backpropagation;
 
 For further optimization an Upper Confidence bounds applied to Trees (UCT) function has been implemented, which balance the exploitation of promising node with the exploration of the tree.
 
