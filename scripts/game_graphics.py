@@ -1,3 +1,5 @@
+"""Connect4 game graphics module."""
+
 from typing import Tuple
 import random
 import os
@@ -26,23 +28,9 @@ WIN_SIZE = (W_WIDTH, W_HEIGHT) = (800, 600)
 FPS = 30
 
 
-################# GameGraphics class #################
-#                                                    #
-# -> update_clouds: cloud moving animation           #
-# -> create_clouds: add new create_clouds            #
-# -> remove_clouds: remove out of screen clouds      #
-# -> draw_cloud: draw single cloud given position    #
-# -> draw_background: draw background elements       #
-# -> draw_board: draw game board and players' pieces #
-# -> draw_select: column highlight selector          #
-# -> gameover_screen: draw game over screen          #
-#                                                    #
-######################################################
-
-
 class GameGraphics:
+    """Connect4 game graphics class."""
 
-    # Class initialization
     def __init__(
         self, win_size: Tuple[int, int], surface: pygame.Surface
     ) -> None:
@@ -52,8 +40,12 @@ class GameGraphics:
         self.n_cloud = 4
         self.create_clouds()
 
-    # Cloud moving animation
     def update_clouds(self, speed: float) -> None:
+        """Update cloud animation.
+
+        Args:
+            speed (float): cloud speed.
+        """
         for key in self.clouds.keys():
             self.clouds[key][0] -= speed/FPS
         # Remove out of screen clouds
@@ -61,8 +53,8 @@ class GameGraphics:
         # Create new clouds
         self.create_clouds()
 
-    # Add new clouds
     def create_clouds(self) -> None:
+        """Create clouds sprites."""
         while len(self.clouds) < self.n_cloud:
             posx = random.randint(self.win_size[0], 2*self.win_size[0])
             posy = random.randint(0, 2*self.win_size[1])
@@ -80,8 +72,8 @@ class GameGraphics:
                 # Add cloud
                 self.clouds[str(name)] = [posx, posy]
 
-    # Remove out of screen clouds
     def remove_clouds(self) -> None:
+        """Remove clouds sprites."""
         remove = []
         toll = 200
         for key, val in self.clouds.items():
@@ -90,8 +82,12 @@ class GameGraphics:
         for i in remove:
             del self.clouds[i]
 
-    # Draw single cloud given position
     def draw_cloud(self, pos: Tuple[int, int]) -> None:
+        """Draw single cloud.
+
+        Args:
+            pos (Tuple[int, int]): X, Y screen coordinate.
+        """
         radius = 30
         pos = (round(pos[0]), round(pos[1]))
         pygame.draw.circle(self.surface, BLACK, pos, radius)
@@ -111,15 +107,23 @@ class GameGraphics:
         pygame.draw.circle(self.surface, WHITE, (pos[0]+70, pos[1]-20), radius+10)
         pygame.draw.circle(self.surface, WHITE, (pos[0]+80, pos[1]+30), radius)
 
-    # Draw background elements
     def draw_background(self, speed: float) -> None:
+        """Draw background elements.
+
+        Args:
+            speed (float): Animation speed.
+        """
         self.surface.fill(LIGHT_BLUE)
         self.update_clouds(speed=speed)
         for pos in self.clouds.values():
             self.draw_cloud(pos)
 
-    # Draw game board and players' pieces
     def draw_board(self, board: np.ndarray) -> None:
+        """Draw game board and players' pieces.
+
+        Args:
+            board (np.ndarray): Game matrix.
+        """
         radius = 30
         w_space = 41
         h_space = 13
@@ -161,8 +165,13 @@ class GameGraphics:
         # Blit surface to screen
         self.surface.blit(frame, (w_space/2, 125))
 
-    # Column highlight selector
     def draw_select(self, column: int, turn: int) -> None:
+        """Draw move selection.
+
+        Args:
+            column (int): Column index.
+            turn (int): Player turn.
+        """
         radius = 30
         w_space = 41
         h_space = 13
@@ -193,6 +202,12 @@ class GameGraphics:
 
     # Draw game over screen
     def gameover_screen(self, winner: int, select: int) -> None:
+        """Draw gameover screen.
+
+        Args:
+            winner (int): Winner id.
+            select (int): Button selection.
+        """
         shift = 3
         surf = pygame.Surface(self.win_size)
         font = pygame.font.SysFont("Futura", 50)
