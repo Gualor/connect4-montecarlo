@@ -1,7 +1,11 @@
-from connect4_mcts import GameBoard
-import pygame
+from typing import Tuple
 import random
 import os
+
+import numpy as np
+import pygame
+
+from connect4_mcts import GameBoard
 
 
 # Color RGB values
@@ -39,7 +43,9 @@ FPS = 30
 class GameGraphics:
 
     # Class initialization
-    def __init__(self, win_size, surface):
+    def __init__(
+        self, win_size: Tuple[int, int], surface: pygame.Surface
+    ) -> None:
         self.win_size = win_size
         self.surface = surface
         self.clouds = {}
@@ -47,7 +53,7 @@ class GameGraphics:
         self.create_clouds()
 
     # Cloud moving animation
-    def update_clouds(self, speed):
+    def update_clouds(self, speed: float) -> None:
         for key in self.clouds.keys():
             self.clouds[key][0] -= speed/FPS
         # Remove out of screen clouds
@@ -56,7 +62,7 @@ class GameGraphics:
         self.create_clouds()
 
     # Add new clouds
-    def create_clouds(self):
+    def create_clouds(self) -> None:
         while len(self.clouds) < self.n_cloud:
             posx = random.randint(self.win_size[0], 2*self.win_size[0])
             posy = random.randint(0, 2*self.win_size[1])
@@ -75,7 +81,7 @@ class GameGraphics:
                 self.clouds[str(name)] = [posx, posy]
 
     # Remove out of screen clouds
-    def remove_clouds(self):
+    def remove_clouds(self) -> None:
         remove = []
         toll = 200
         for key, val in self.clouds.items():
@@ -85,7 +91,7 @@ class GameGraphics:
             del self.clouds[i]
 
     # Draw single cloud given position
-    def draw_cloud(self, pos):
+    def draw_cloud(self, pos: Tuple[int, int]) -> None:
         radius = 30
         pos = (round(pos[0]), round(pos[1]))
         pygame.draw.circle(self.surface, BLACK, pos, radius)
@@ -106,14 +112,14 @@ class GameGraphics:
         pygame.draw.circle(self.surface, WHITE, (pos[0]+80, pos[1]+30), radius)
 
     # Draw background elements
-    def draw_background(self, speed):
+    def draw_background(self, speed: float) -> None:
         self.surface.fill(LIGHT_BLUE)
         self.update_clouds(speed=speed)
         for pos in self.clouds.values():
             self.draw_cloud(pos)
 
     # Draw game board and players' pieces
-    def draw_board(self, board):
+    def draw_board(self, board: np.ndarray) -> None:
         radius = 30
         w_space = 41
         h_space = 13
@@ -156,7 +162,7 @@ class GameGraphics:
         self.surface.blit(frame, (w_space/2, 125))
 
     # Column highlight selector
-    def draw_select(self, column, turn):
+    def draw_select(self, column: int, turn: int) -> None:
         radius = 30
         w_space = 41
         h_space = 13
@@ -186,7 +192,7 @@ class GameGraphics:
             self.surface.blit(surf, (w_space/2, 18))
 
     # Draw game over screen
-    def gameover_screen(self, winner, select):
+    def gameover_screen(self, winner: int, select: int) -> None:
         shift = 3
         surf = pygame.Surface(self.win_size)
         font = pygame.font.SysFont("Futura", 50)

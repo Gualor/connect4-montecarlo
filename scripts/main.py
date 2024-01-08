@@ -1,10 +1,11 @@
-from connect4_mcts import GameBoard, MCTS, Node
-from game_graphics import GameGraphics
 from threading import Thread
 from queue import Queue
-import pygame
 import os
 
+import pygame
+
+from game_graphics import GameGraphics
+from connect4_mcts import GameBoard, MCTS, Node
 
 # Screen resolution
 WIN_SIZE = (W_WIDTH, W_HEIGHT) = (800, 600)

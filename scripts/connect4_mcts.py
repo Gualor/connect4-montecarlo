@@ -1,8 +1,10 @@
-import numpy as np
+from typing import Optional, Tuple, List
 import random
 import time
 import math
 import os
+
+import numpy as np
 
 
 # MCTS move computation time
@@ -23,13 +25,13 @@ PROCESS_TIME = 3
 class GameBoard:
 
     # Class initialization
-    def __init__(self, cpu):
+    def __init__(self, cpu: int) -> None:
         self.turn = random.randint(1, 2)
         self.board = np.zeros(shape=(6, 7))
         self.cpu = cpu
 
     # Print out game board on console
-    def show(self):
+    def show(self) -> None:
         os.system('cls')
         print("+---------------------------+")
         for j in range(5, -1, -1):
@@ -52,7 +54,7 @@ class GameBoard:
             print("Enter a number between 1 and 7: ", end="")
 
     # Takes user input and play move
-    def play(self):
+    def play(self) -> bool:
         try:
             move = int(input())
             if move in [1, 2, 3, 4, 5, 6, 7]:
@@ -66,7 +68,7 @@ class GameBoard:
             return False
 
     # Check whether match is over
-    def check_win(self):
+    def check_win(self) -> Optional[int]:
         # check rows
         for y in range(6):
             row = list(self.board[y, :])
@@ -103,7 +105,7 @@ class GameBoard:
         return None
 
     # Given a column, applies a move
-    def apply_move(self, column):
+    def apply_move(self, column: int) -> bool:
         for i in range(6):
             if self.board[i, column - 1] == 0:
                 self.board[i, column - 1] = self.turn
@@ -112,7 +114,7 @@ class GameBoard:
         return False
 
     # Change player turn
-    def switch_turn(self):
+    def switch_turn(self) -> None:
         if self.turn == 1:
             self.turn = 2
         else:
@@ -139,12 +141,12 @@ class GameBoard:
 class MCTS:
 
     # Class initialization
-    def __init__(self, symbol, t):
+    def __init__(self, symbol: int, t: float) -> None:
         self.symbol = symbol
         self.t = t
 
     # Main function for MCTS move computation
-    def compute_move(self, root):
+    def compute_move(self, root: "Node") -> Tuple[int, int]:
         time0 = time.time()
         while(time.time() - time0) < self.t:
             # selection and expansion
@@ -161,7 +163,7 @@ class MCTS:
                     return (j, i)
 
     # Node traversal
-    def select(self, node):
+    def select(self, node: "Node") -> "Node":
         # if all children of node has been expanded
         # select best one according to uct value
         while(self.fully_expanded(node)):
@@ -184,7 +186,7 @@ class MCTS:
                 return node
 
     # Return node with best uct value
-    def select_uct(self, node):
+    def select_uct(self, node: "Node") -> "Node":
         best_uct = -10000000
         best_node = None
         for child in node.children:
@@ -199,7 +201,7 @@ class MCTS:
             return best_node
 
     # Check if node is a leaf
-    def fully_expanded(self, node):
+    def fully_expanded(self, node: "Node") -> bool:
         visited = True
         # max number of children a node can have
         if list(node.board[5]).count(0) == len(node.children):
@@ -212,13 +214,13 @@ class MCTS:
             return False
 
     # Policy for choosing unexplored nodes
-    def pick_unvisited(self, children):
+    def pick_unvisited(self, children: List["Node"]) -> "Node":
         for child in children:
             if child.N == 0:
                 return child
 
     # Given a node, returns result of simulation
-    def rollout(self, node):
+    def rollout(self, node: "Node") -> int:
         board = node.board
         turn = node.turn
         if not node.terminal:
@@ -246,7 +248,7 @@ class MCTS:
             return self.result(board)
 
     # Return all possible next states
-    def get_moves(self, board, turn):
+    def get_moves(self, board: np.ndarray, turn: int) -> List[np.ndarray]:
         moves = list()
         for i in range(7):
             if board[5, i] == 0:
@@ -262,7 +264,7 @@ class MCTS:
         return moves
 
     # Get result score from board
-    def result(self, board):
+    def result(self, board: np.ndarray) -> int:
         winner = None
         # check rows
         for y in range(6):
@@ -309,7 +311,7 @@ class MCTS:
 
     # Resursive function to update number of visits
     # and score of each node from leaf to root
-    def backpropagate(self, node, result):
+    def backpropagate(self, node: "Node", result: int) -> None:
         # add result when AI's turn
         if node.turn == self.symbol:
             node.Q += result
@@ -326,7 +328,7 @@ class MCTS:
             self.backpropagate(node.parent, result)
 
     # Returns root child with largest number of visits
-    def best_child(self, node):
+    def best_child(self, node: "Node") -> "Node":
         max_visit = 0
         best_node = None
         for child in node.children:
@@ -346,7 +348,9 @@ class MCTS:
 class Node:
 
     # Class initialization
-    def __init__(self, parent, board, turn):
+    def __init__(
+        self, parent: Optional["Node"], board: np.ndarray, turn: int
+    ) -> None:
         self.Q = 0  # sum of rollout outcomes
         self.N = 0  # number of visits
         self.parent = parent
@@ -362,7 +366,7 @@ class Node:
         self.terminal = self.check_terminal()
 
     # Check if node is a leaf
-    def check_terminal(self):
+    def check_terminal(self) -> bool:
         # check rows
         for y in range(6):
             row = list(self.board[y, :])
@@ -402,7 +406,7 @@ class Node:
             return True
 
     # Add child to node
-    def add_child(self):
+    def add_child(self) -> None:
         # node already expanded
         if self.expanded:
             return
@@ -443,7 +447,9 @@ class Node:
         return
 
     # True if children states are equal
-    def compare_children(self, new_child, children):
+    def compare_children(
+        self, new_child: "Node", children: List["Node"]
+    ) -> bool:
         for child in children:
             if (new_child == child).all():
                 return True
