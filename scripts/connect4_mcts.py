@@ -8,8 +8,8 @@ import os
 
 import numpy as np
 
-
-PROCESS_TIME: float = 3.0  # MCTS move computation time
+# MCTS move computation time
+PROCESS_TIME: float = 3.0
 
 
 class GameBoard:
@@ -22,7 +22,7 @@ class GameBoard:
 
     def show(self) -> None:
         """Print out game board on console."""
-        os.system('cls')
+        os.system("cls")
         print("+---------------------------+")
         for j in range(5, -1, -1):
             for i in range(7):
@@ -53,8 +53,8 @@ class GameBoard:
             move = int(input())
             if move in [1, 2, 3, 4, 5, 6, 7]:
                 for i in range(6):
-                    if self.board[i, move-1] == 0:
-                        self.board[i, move-1] = self.turn
+                    if self.board[i, move - 1] == 0:
+                        self.board[i, move - 1] = self.turn
                         self.switch_turn()
                         return True
             return False
@@ -71,32 +71,32 @@ class GameBoard:
         for y in range(6):
             row = list(self.board[y, :])
             for x in range(4):
-                if row[x:x+4].count(row[x]) == 4:
+                if row[x : x + 4].count(row[x]) == 4:
                     if row[x] != 0:
                         return row[x]
         # check columns
         for x in range(7):
             col = list(self.board[:, x])
             for y in range(3):
-                if col[y:y+4].count(col[y]) == 4:
+                if col[y : y + 4].count(col[y]) == 4:
                     if col[y] != 0:
                         return col[y]
         # check right diagonals
-        points = [(3, 0), (4, 0), (3, 1), (5, 0), (4, 1), (3, 2),
-                  (5, 1), (4, 2), (3, 3), (5, 2), (4, 3), (5, 3)]
+        points = [(3, 0), (4, 0), (3, 1), (5, 0), (4, 1), (3, 2), (5, 1),
+                  (4, 2), (3, 3), (5, 2), (4, 3), (5, 3)]
         for point in points:
-            diag = list()
+            diag = []
             for k in range(4):
-                diag.append(self.board[point[0]-k, point[1]+k])
+                diag.append(self.board[point[0] - k, point[1] + k])
             if diag.count(1) == 4 or diag.count(2) == 4:
                 return diag[0]
         # check left diagonals
-        points = [(5, 3), (5, 4), (4, 3), (5, 5), (4, 4), (3, 3),
-                  (5, 6), (4, 5), (3, 4), (4, 6), (3, 5), (3, 6)]
+        points = [(5, 3), (5, 4), (4, 3), (5, 5), (4, 4), (3, 3), (5, 6),
+                  (4, 5), (3, 4), (4, 6), (3, 5), (3, 6)]
         for point in points:
-            diag = list()
+            diag = []
             for k in range(4):
-                diag.append(self.board[point[0]-k, point[1]-k])
+                diag.append(self.board[point[0] - k, point[1] - k])
             if diag.count(1) == 4 or diag.count(2) == 4:
                 return diag[0]
         # no winner
@@ -143,7 +143,7 @@ class MCTS:
             Tuple[int, int] | None: Board 2D coordinate.
         """
         time0 = time.time()
-        while(time.time() - time0) < self.t:
+        while (time.time() - time0) < self.t:
             # selection and expansion
             leaf = self.select(node)
             # simulation
@@ -169,7 +169,7 @@ class MCTS:
         """
         # if all children of node has been expanded
         # select best one according to uct value
-        while(self.fully_expanded(node)):
+        while self.fully_expanded(node):
             tmp = self.select_uct(node)
             # if select_uct returns back the node break
             if tmp == node:
@@ -200,7 +200,8 @@ class MCTS:
         best_uct = -10000000
         best_node = None
         for child in node.children:
-            uct = (child.Q/child.N) + 2*math.sqrt((math.log(node.N))/child.N)
+            uct = (child.Q / child.N) + \
+                2 * math.sqrt((math.log(node.N)) / child.N)
             if uct > best_uct:
                 best_uct = uct
                 best_node = child
@@ -256,7 +257,7 @@ class MCTS:
         board = node.board
         turn = node.turn
         if not node.terminal:
-            while(True):
+            while True:
                 # switch turn
                 if turn == 1:
                     turn = 2
@@ -317,32 +318,32 @@ class MCTS:
         for y in range(6):
             row = list(board[y, :])
             for x in range(4):
-                if row[x:x+4].count(row[x]) == 4:
+                if row[x : x + 4].count(row[x]) == 4:
                     if row[x] != 0:
                         winner = row[x]
         # check columns
         for x in range(7):
             col = list(board[:, x])
             for y in range(3):
-                if col[y:y+4].count(col[y]) == 4:
+                if col[y : y + 4].count(col[y]) == 4:
                     if col[y] != 0:
                         winner = col[y]
         # check right diagonals
-        points = [(3, 0), (4, 0), (3, 1), (5, 0), (4, 1), (3, 2),
-                  (5, 1), (4, 2), (3, 3), (5, 2), (4, 3), (5, 3)]
+        points = [(3, 0), (4, 0), (3, 1), (5, 0), (4, 1), (3, 2), (5, 1),
+                  (4, 2), (3, 3), (5, 2), (4, 3), (5, 3)]
         for point in points:
-            diag = list()
+            diag = []
             for k in range(4):
-                diag.append(board[point[0]-k, point[1]+k])
+                diag.append(board[point[0] - k, point[1] + k])
             if diag.count(1) == 4 or diag.count(2) == 4:
                 winner = diag[k]
         # check left diagonals
-        points = [(5, 3), (5, 4), (4, 3), (5, 5), (4, 4), (3, 3),
-                  (5, 6), (4, 5), (3, 4), (4, 6), (3, 5), (3, 6)]
+        points = [(5, 3), (5, 4), (4, 3), (5, 5), (4, 4), (3, 3), (5, 6),
+                  (4, 5), (3, 4), (4, 6), (3, 5), (3, 6),]
         for point in points:
             diag = list()
             for k in range(4):
-                diag.append(board[point[0]-k, point[1]-k])
+                diag.append(board[point[0] - k, point[1] - k])
             if diag.count(1) == 4 or diag.count(2) == 4:
                 winner = diag[k]
         # Tie
@@ -426,39 +427,39 @@ class Node:
         for y in range(6):
             row = list(self.board[y, :])
             for x in range(4):
-                if row[x:x+4].count(row[x]) == 4:
+                if row[x : x + 4].count(row[x]) == 4:
                     if row[x] != 0:
                         return True
         # check columns
         for x in range(7):
             col = list(self.board[:, x])
             for y in range(3):
-                if col[y:y+4].count(col[y]) == 4:
+                if col[y : y + 4].count(col[y]) == 4:
                     if col[y] != 0:
                         return True
         # check right diagonals
-        points = [(3, 0), (4, 0), (3, 1), (5, 0), (4, 1), (3, 2),
-                  (5, 1), (4, 2), (3, 3), (5, 2), (4, 3), (5, 3)]
+        points = [(3, 0), (4, 0), (3, 1), (5, 0), (4, 1), (3, 2), (5, 1),
+                  (4, 2), (3, 3), (5, 2), (4, 3), (5, 3)]
         for point in points:
             diag = list()
             for k in range(4):
-                diag.append(self.board[point[0]-k, point[1]+k])
+                diag.append(self.board[point[0] - k, point[1] + k])
             if diag.count(1) == 4 or diag.count(2) == 4:
                 return True
         # check left diagonals
-        points = [(5, 3), (5, 4), (4, 3), (5, 5), (4, 4), (3, 3),
-                  (5, 6), (4, 5), (3, 4), (4, 6), (3, 5), (3, 6)]
+        points = [(5, 3), (5, 4), (4, 3), (5, 5), (4, 4), (3, 3), (5, 6),
+                  (4, 5), (3, 4), (4, 6), (3, 5), (3, 6)]
         for point in points:
-            diag = list()
+            diag = []
             for k in range(4):
-                diag.append(self.board[point[0]-k, point[1]-k])
+                diag.append(self.board[point[0] - k, point[1] - k])
             if diag.count(1) == 4 or diag.count(2) == 4:
                 return True
+        # no moves left
+        if np.all(self.board != 0):
+            return True
         # no winner
         return False
-        # no moves left
-        if list(self.board.flatten()).count(0) == 0:
-            return True
 
     def add_child(self) -> None:
         """Add new child to node."""
@@ -522,17 +523,14 @@ class Node:
 # Run this script to play Connect 4 against Monte Carlo AI
 # with graphics printed out on the console with ASCII characters
 if __name__ == "__main__":
-
     # Begin new game
     while True:
-
         # Classes declaration
         gameBoard = GameBoard(cpu=1)
         monteCarlo = MCTS(symbol=1, t=5)
 
         # Game loop
         while True:
-
             # Print out the updated game board
             gameBoard.show()
 
@@ -552,7 +550,8 @@ if __name__ == "__main__":
             # Monte Carlo turn
             if gameBoard.turn == monteCarlo.symbol:
                 # initialiaze root node
-                root = Node(parent=None, board=gameBoard.board, turn=monteCarlo.symbol)
+                root = Node(
+                    parent=None, board=gameBoard.board, turn=monteCarlo.symbol)
                 # compute best move with monte carlo tree search
                 move = monteCarlo.compute_move(root)
                 # update game board

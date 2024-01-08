@@ -20,12 +20,11 @@ FPS = 30
 # Run this script to play Connect 4 against Monte Carlo AI
 # with drawn game graphics in dedicated window
 if __name__ == "__main__":
-
     # Initialize stuff
-    os.system('cls')
+    os.system("cls")
     pygame.display.init()
     pygame.font.init()
-    pygame.display.set_caption('Connect 4 Montecarlo')
+    pygame.display.set_caption("Connect 4 Montecarlo")
     window = pygame.display.set_mode(WIN_SIZE)
     clock = pygame.time.Clock()
     que = Queue()
@@ -35,7 +34,6 @@ if __name__ == "__main__":
 
     # Begin new game
     while True:
-
         # Class declaration
         gameboard = GameBoard(cpu=1)
         montecarlo = MCTS(symbol=1, t=PROCESS_TIME)
@@ -49,7 +47,6 @@ if __name__ == "__main__":
 
         # Game loop
         while True:
-
             # Check game over
             winner = gameboard.check_win()
             if winner is not None:
@@ -85,9 +82,17 @@ if __name__ == "__main__":
                 # Start thinking
                 if not threads:
                     # Initialiaze root node
-                    root = Node(parent=None, board=gameboard.board, turn=montecarlo.symbol)
+                    root = Node(
+                        parent=None,
+                        board=gameboard.board,
+                        turn=montecarlo.symbol
+                    )
                     # Start Monte Carlo move computation thread
-                    t = Thread(target=lambda q, arg1: q.put(montecarlo.compute_move(arg1)), args=(que, root))
+                    t = Thread(
+                        target=lambda q, arg1: q.put(
+                            montecarlo.compute_move(arg1)),
+                        args=(que, root),
+                    )
                     t.start()
                     # Add t to current running threads
                     threads.append(t)
@@ -116,7 +121,6 @@ if __name__ == "__main__":
         select = 1
         new_game = False
         while not new_game:
-
             # Menu controls
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
