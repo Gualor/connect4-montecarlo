@@ -261,7 +261,7 @@ class MCTS:
         best_uct = -np.inf
         best_node = None
         for child in node.children:
-            uct = (child.q / child.n) + 2 * np.sqrt((np.log(node.n)) / child.n)
+            uct = (child.q / child.n) + 2 * np.sqrt(np.log(node.n) / child.n)
             if uct > best_uct:
                 best_uct = uct
                 best_node = child
@@ -303,24 +303,21 @@ class MCTS:
                 return child
         return None
 
-    def rollout(self, node: "Node") -> int:
+    def rollout(self, node: "Node") -> Optional[int]:
         """Perform a random game simulation.
 
         Args:
             node (Node): Starting node.
 
         Returns:
-            int: Game result.
+            int | None: Game result.
         """
         board = node.board
         turn = node.turn
         if not node.terminal:
             while True:
                 # switch turn
-                if turn == 1:
-                    turn = 2
-                else:
-                    turn = 1
+                turn = 1 if turn == 2 else 2
                 # get moves from current board
                 moves = self.get_moves(board, turn)
                 if moves:
@@ -361,49 +358,46 @@ class MCTS:
                         break
         return moves
 
-    def result(self, board: np.ndarray) -> int:
+    def result(self, board: np.ndarray) -> Optional[int]:
         """Get game result from terminal board.
 
         Args:
             board (np.ndarray): Game matrix.
 
         Returns:
-            int: Game result.
+            int | None: Winner id or None.
         """
         winner = GameBoard.check_rows(board)
         if winner is not None:
-            return 1 if winner == self.symbol else -1
+            return winner
 
         winner = GameBoard.check_cols(board)
         if winner is not None:
-            return 1 if winner == self.symbol else -1
+            return winner
 
         winner = GameBoard.check_diag(board)
         if winner is not None:
-            return 1 if winner == self.symbol else -1
+            return winner
 
-        return 0
+        return None
 
-    def backpropagate(self, node: "Node", result: int) -> None:
+    def backpropagate(self, node: "Node", winner: Optional[int]) -> None:
         """Update recursively node visits and scores from leaf to root.
 
         Args:
             node (Node): Leaf node.
-            result (int): Game result of leaf node.
+            winner (int): Winner id.
         """
-        # add result when AI's turn
-        if node.turn == self.symbol:
-            node.q += result
-        # or else subtract it
-        else:
-            node.q -= result
+        # increment result by 1 if winner
+        if node.turn == winner:
+            node.q += 1
         # increment visit number by 1
         node.n += 1
         # stop if node is root
         if node.parent is None:
             return
         # call function recursively on parent
-        self.backpropagate(node.parent, result)
+        self.backpropagate(node.parent, winner)
 
     def best_child(self, node: "Node") -> Optional["Node"]:
         """Get child node with largest number of visits.
