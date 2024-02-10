@@ -1,5 +1,9 @@
+"""Connect4 Monte Carlo main."""
+
+from typing import List
 from threading import Thread
 from queue import Queue
+import sys
 import os
 
 import pygame
@@ -17,9 +21,8 @@ PROCESS_TIME = 5
 FPS = 30
 
 
-# Run this script to play Connect 4 against Monte Carlo AI
-# with drawn game graphics in dedicated window
 if __name__ == "__main__":
+
     # Initialize stuff
     os.system("cls")
     pygame.display.init()
@@ -27,90 +30,75 @@ if __name__ == "__main__":
     pygame.display.set_caption("Connect 4 Montecarlo")
     window = pygame.display.set_mode(WIN_SIZE)
     clock = pygame.time.Clock()
-    que = Queue()
-
-    # Initialize game graphics
+    move_queue: "Queue[int]" = Queue()
     graphics = GameGraphics(win_size=WIN_SIZE, surface=window)
 
     # Begin new game
     while True:
-        # Class declaration
+
         gameboard = GameBoard(cpu=1)
         montecarlo = MCTS(symbol=1, t=PROCESS_TIME)
-
-        # Game variables
-        winner = None
-        select = 1
-
-        # Monte carlo threads list
-        threads = []
+        game_over = False
+        winner_id = None
+        select_move = 1
+        threads: List[Thread] = []
 
         # Game loop
         while True:
-            # Check game over
-            winner = gameboard.check_win()
-            if winner is not None:
-                pygame.time.wait(1500)
+
+            # Check for game over
+            game_over, winner_id = gameboard.check_win()
+            if game_over is True:
+                pygame.time.wait(1000)
                 break
-            else:
-                if list(gameboard.board.flatten()).count(0) == 0:
-                    winner = 0
-                    pygame.time.wait(1500)
-                    break
 
             # Human turn
             if gameboard.turn != gameboard.cpu:
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
-                        game_over = True
-                    if event.type == pygame.KEYDOWN:
-                        # Move column selection to the right
-                        if event.key == pygame.K_RIGHT:
-                            if select < 7:
-                                select += 1
-                        # Move column selection to the left
+                        sys.exit()
+                    elif event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_ESCAPE:
+                            sys.exit()
+                        elif event.key == pygame.K_RIGHT:
+                            if select_move < 7:
+                                select_move += 1
                         elif event.key == pygame.K_LEFT:
-                            if select > 1:
-                                select -= 1
-                        # Enter column and execute move
+                            if select_move > 1:
+                                select_move -= 1
                         elif event.key == pygame.K_RETURN:
-                            if gameboard.board[5, select - 1] == 0:
-                                gameboard.apply_move(column=select)
+                            if gameboard.board[5, select_move - 1] == 0:
+                                gameboard.apply_move(select_move)
 
             # Monte Carlo turn
             else:
+
                 # Start thinking
-                if not threads:
-                    # Initialiaze root node
+                if len(threads) == 0:
                     root = Node(
                         parent=None,
                         board=gameboard.board,
-                        turn=montecarlo.symbol
+                        turn=montecarlo.symbol,
                     )
-                    # Start Monte Carlo move computation thread
                     t = Thread(
-                        target=lambda q, arg1: q.put(
-                            montecarlo.compute_move(arg1)),
-                        args=(que, root),
+                        target=lambda q, x: q.put(montecarlo.compute_move(x)),
+                        args=(move_queue, root),
                     )
                     t.start()
-                    # Add t to current running threads
                     threads.append(t)
+
                 # Ready to play
-                if not que.empty():
-                    # Remove thread
+                if move_queue.empty() is False:
                     threads.pop()
-                    # Get move from queue
-                    move = que.get()
-                    # Update board and switch turn
-                    gameboard.board[move[0], move[1]] = montecarlo.symbol
+                    move = move_queue.get()
+                    gameboard.board[move] = montecarlo.symbol
                     gameboard.switch_turn()
 
             # Draw game graphics
             graphics.draw_background(speed=100)
             graphics.draw_board(board=gameboard.board)
             if gameboard.turn != gameboard.cpu:
-                graphics.draw_select(column=select, turn=gameboard.turn)
+                graphics.draw_select(column=select_move, turn=gameboard.turn)
 
             # Update stuff
             clock.tick(FPS)
@@ -118,33 +106,32 @@ if __name__ == "__main__":
             pygame.display.flip()
 
         # Game over / continue
-        select = 1
+        select_option = 1
         new_game = False
-        while not new_game:
+        while new_game is False:
+
             # Menu controls
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    game_over = True
-                if event.type == pygame.KEYDOWN:
-                    # Move column selection to the right
-                    if event.key == pygame.K_RIGHT:
-                        if select < 2:
-                            select += 1
-                    # Move column selection to the left
+                    sys.exit()
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        sys.exit()
+                    elif event.key == pygame.K_RIGHT:
+                        if select_option < 2:
+                            select_option += 1
                     elif event.key == pygame.K_LEFT:
-                        if select > 1:
-                            select -= 1
-                    # Enter column and execute move
+                        if select_option > 1:
+                            select_option -= 1
                     elif event.key == pygame.K_RETURN:
-                        # Start new game
-                        if select == 1:
+                        if select_option == 1:
                             new_game = True
-                        elif select == 2:
-                            exit()
+                        elif select_option == 2:
+                            sys.exit()
 
             # Draw game over screen
             graphics.draw_background(speed=100)
-            graphics.gameover_screen(winner, select)
+            graphics.gameover_screen(winner_id, select_option)
 
             # Update stuff
             clock.tick(FPS)

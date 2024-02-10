@@ -1,7 +1,8 @@
 """Connect4 game graphics module."""
 
-from typing import Tuple
+from typing import Tuple, Dict, Optional
 import random
+import sys
 import os
 
 import numpy as np
@@ -36,7 +37,7 @@ class GameGraphics:
     ) -> None:
         self.win_size = win_size
         self.surface = surface
-        self.clouds = {}
+        self.clouds: Dict[int, Tuple[int, int]] = {}
         self.n_cloud = 4
         self.create_clouds()
 
@@ -46,11 +47,9 @@ class GameGraphics:
         Args:
             speed (float): cloud speed.
         """
-        for key in self.clouds.keys():
-            self.clouds[key][0] -= speed / FPS
-        # Remove out of screen clouds
+        for cloud_id, pos in self.clouds.items():
+            self.clouds[cloud_id] = (pos[0] - int(speed / FPS), pos[1])
         self.remove_clouds()
-        # Create new clouds
         self.create_clouds()
 
     def create_clouds(self) -> None:
@@ -59,18 +58,15 @@ class GameGraphics:
             posx = random.randint(self.win_size[0], 2 * self.win_size[0])
             posy = random.randint(0, 2 * self.win_size[1])
             dist = 150
-            name = 0
-            # Cloud spacing
+            cloud_id = 0
             spaced = True
             for pos in self.clouds.values():
                 if abs(pos[1] - posy) < dist:
                     spaced = False
             if spaced:
-                # Cloud naming
-                while str(name) in self.clouds.keys():
-                    name += 1
-                # Add cloud
-                self.clouds[str(name)] = [posx, posy]
+                while cloud_id in self.clouds:
+                    cloud_id += 1
+                self.clouds[cloud_id] = (posx, posy)
 
     def remove_clouds(self) -> None:
         """Remove clouds sprites."""
@@ -88,34 +84,24 @@ class GameGraphics:
         Args:
             pos (Tuple[int, int]): X, Y screen coordinate.
         """
-        radius = 30
-        pos = (round(pos[0]), round(pos[1]))
-        pygame.draw.circle(self.surface, BLACK, pos, radius)
-        pygame.draw.circle(
-            self.surface, BLACK, (pos[0] + 30, pos[1] + 10), radius - 10)
-        pygame.draw.circle(self.surface, BLACK, (pos[0] + 60, pos[1]), radius)
-        pygame.draw.circle(self.surface, BLACK, (pos[0] + 110, pos[1]), radius)
-        pygame.draw.circle(
-            self.surface, BLACK, (pos[0] + 30, pos[1] - 30), radius)
-        pygame.draw.circle(
-            self.surface, BLACK, (pos[0] + 30, pos[1] + 20), radius + 10)
-        pygame.draw.circle(
-            self.surface, BLACK, (pos[0] + 70, pos[1] - 20), radius + 10)
-        pygame.draw.circle(
-            self.surface, BLACK, (pos[0] + 80, pos[1] + 30), radius)
-        pygame.draw.circle(self.surface, WHITE, pos, radius)
-        pygame.draw.circle(
-            self.surface, WHITE, (pos[0] + 30, pos[1] + 10), radius - 10)
-        pygame.draw.circle(self.surface, WHITE, (pos[0] + 60, pos[1]), radius)
-        pygame.draw.circle(self.surface, WHITE, (pos[0] + 110, pos[1]), radius)
-        pygame.draw.circle(
-            self.surface, WHITE, (pos[0] + 30, pos[1] - 30), radius)
-        pygame.draw.circle(
-            self.surface, WHITE, (pos[0] + 30, pos[1] + 20), radius + 10)
-        pygame.draw.circle(
-            self.surface, WHITE, (pos[0] + 70, pos[1] - 20), radius + 10)
-        pygame.draw.circle(
-            self.surface, WHITE, (pos[0] + 80, pos[1] + 30), radius)
+        r = 30
+        p = (round(pos[0]), round(pos[1]))
+        pygame.draw.circle(self.surface, BLACK, p, r)
+        pygame.draw.circle(self.surface, BLACK, (p[0] + 30, p[1] + 10), r - 10)
+        pygame.draw.circle(self.surface, BLACK, (p[0] + 60, p[1]), r)
+        pygame.draw.circle(self.surface, BLACK, (p[0] + 110, p[1]), r)
+        pygame.draw.circle(self.surface, BLACK, (p[0] + 30, p[1] - 30), r)
+        pygame.draw.circle(self.surface, BLACK, (p[0] + 30, p[1] + 20), r + 10)
+        pygame.draw.circle(self.surface, BLACK, (p[0] + 70, p[1] - 20), r + 10)
+        pygame.draw.circle(self.surface, BLACK, (p[0] + 80, p[1] + 30), r)
+        pygame.draw.circle(self.surface, WHITE, p, r)
+        pygame.draw.circle(self.surface, WHITE, (p[0] + 30, p[1] + 10), r - 10)
+        pygame.draw.circle(self.surface, WHITE, (p[0] + 60, p[1]), r)
+        pygame.draw.circle(self.surface, WHITE, (p[0] + 110, p[1]), r)
+        pygame.draw.circle(self.surface, WHITE, (p[0] + 30, p[1] - 30), r)
+        pygame.draw.circle(self.surface, WHITE, (p[0] + 30, p[1] + 20), r + 10)
+        pygame.draw.circle(self.surface, WHITE, (p[0] + 70, p[1] - 20), r + 10)
+        pygame.draw.circle(self.surface, WHITE, (p[0] + 80, p[1] + 30), r)
 
     def draw_background(self, speed: float) -> None:
         """Draw background elements.
@@ -239,12 +225,11 @@ class GameGraphics:
             pygame.draw.circle(surf, YELLOW, pos, radius)
             self.surface.blit(surf, (w_space / 2, 18))
 
-    # Draw game over screen
-    def gameover_screen(self, winner: int, select: int) -> None:
+    def gameover_screen(self, winner: Optional[int], select: int) -> None:
         """Draw gameover screen.
 
         Args:
-            winner (int): Winner id.
+            winner (int | None): Winner id or None.
             select (int): Button selection.
         """
         shift = 3
@@ -257,42 +242,18 @@ class GameGraphics:
         pygame.draw.rect(surf, YELLOW, (200, 380, 120, 40))
         pygame.draw.rect(surf, RED, (480, 380, 120, 40))
         # Draw window shadow
-        pygame.draw.polygon(
-            surf,
-            BLACK,
-            (
-                (100, 150),
-                (100 + shift, 150 - shift),
-                (700 + shift, 150 - shift),
-                (700 + shift, 450 - shift),
-                (700, 450),
-                (700, 150),
-            ),
-        )
-        pygame.draw.polygon(
-            surf,
-            BLACK,
-            (
-                (200, 380),
-                (200 + shift, 380 - shift),
-                (320 + shift, 380 - shift),
-                (320 + shift, 420 - shift),
-                (320, 420),
-                (320, 380),
-            ),
-        )
-        pygame.draw.polygon(
-            surf,
-            BLACK,
-            (
-                (480, 380),
-                (480 + shift, 380 - shift),
-                (600 + shift, 380 - shift),
-                (600 + shift, 420 - shift),
-                (600, 420),
-                (600, 380),
-            ),
-        )
+        pygame.draw.polygon(surf, BLACK, (
+            (100, 150), (100 + shift, 150 - shift), (700 + shift, 150 - shift),
+            (700 + shift, 450 - shift), (700, 450), (700, 150)
+        ))
+        pygame.draw.polygon(surf, BLACK, (
+            (200, 380), (200 + shift, 380 - shift), (320 + shift, 380 - shift),
+            (320 + shift, 420 - shift), (320, 420), (320, 380)
+        ))
+        pygame.draw.polygon(surf, BLACK, (
+            (480, 380), (480 + shift, 380 - shift), (600 + shift, 380 - shift),
+            (600 + shift, 420 - shift), (600, 420), (600, 380)
+        ))
         # Draw answear selector
         if select == 1:
             pygame.draw.rect(surf, WHITE, (200, 380, 120, 40), 3)
@@ -303,14 +264,13 @@ class GameGraphics:
         self.surface.blit(surf, (0, 0))
         # Draw text
         if winner == 1:
-            champion = font.render("Monte Carlo is the winner!", True, WHITE)
+            champion = font.render("Red player is the winner!", True, WHITE)
             self.surface.blit(champion, (180, 182))
         elif winner == 2:
-            champion = font.render("Human won against the machine!", True,
-                                   WHITE)
+            champion = font.render("Yellow player is the winner!", True, WHITE)
             self.surface.blit(champion, (125, 182))
         else:
-            champion = font.render("Human and machine tied!", True, WHITE)
+            champion = font.render("Game ended in a tie!", True, WHITE)
             self.surface.blit(champion, (185, 182))
         rematch = font.render("Rematch?", True, WHITE)
         yes = font.render("YES", True, WHITE)
@@ -324,9 +284,8 @@ class GameGraphics:
         self.surface.blit(no, (515, 385))
 
 
-# Run this script to play 2 player version of Connect 4
-# game with drawn graphics in dedicated window
 if __name__ == "__main__":
+
     # Initialize stuff
     os.system("cls")
     pygame.display.init()
@@ -334,52 +293,46 @@ if __name__ == "__main__":
     pygame.display.set_caption("Connect 4 Montecarlo")
     window = pygame.display.set_mode(WIN_SIZE)
     clock = pygame.time.Clock()
-
-    # Draw game graphics
     graphics = GameGraphics(win_size=WIN_SIZE, surface=window)
 
     # Begin new game
     while True:
-        # Initialize game
+
         gameboard = GameBoard(cpu=1)
-        winner = None
-        select = 1
+        game_over = False
+        winner_id = None
+        select_move = 1
 
         # Game loop
         while True:
-            # Check game over
-            winner = gameboard.check_win()
-            if winner is not None:
-                pygame.time.wait(1500)
+
+            # Check for game over
+            game_over, winner_id = gameboard.check_win()
+            if game_over is True:
+                pygame.time.wait(1000)
                 break
-            else:
-                if list(gameboard.board.flatten()).count(0) == 0:
-                    winner = 0
-                    pygame.time.wait(1500)
-                    break
 
             # Game controls
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    game_over = True
-                if event.type == pygame.KEYDOWN:
-                    # Move column selection to the right
-                    if event.key == pygame.K_RIGHT:
-                        if select < 7:
-                            select += 1
-                    # Move column selection to the left
+                    sys.exit()
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        sys.exit()
+                    elif event.key == pygame.K_RIGHT:
+                        if select_move < 7:
+                            select_move += 1
                     elif event.key == pygame.K_LEFT:
-                        if select > 1:
-                            select -= 1
-                    # Enter column and execute move
+                        if select_move > 1:
+                            select_move -= 1
                     elif event.key == pygame.K_RETURN:
-                        if gameboard.board[5, select - 1] == 0:
-                            gameboard.apply_move(column=select)
+                        if gameboard.board[5, select_move - 1] == 0:
+                            gameboard.apply_move(select_move)
 
             # Draw game graphics
             graphics.draw_background(speed=100)
-            graphics.draw_board(board=gameboard.board)
-            graphics.draw_select(column=select, turn=gameboard.turn)
+            graphics.draw_board(gameboard.board)
+            graphics.draw_select(select_move, gameboard.turn)
 
             # Update stuff
             clock.tick(FPS)
@@ -387,33 +340,32 @@ if __name__ == "__main__":
             pygame.display.flip()
 
         # Game over / continue
-        select = 1
+        select_option = 1
         new_game = False
-        while not new_game:
+        while new_game is False:
+
             # Menu controls
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    game_over = True
-                if event.type == pygame.KEYDOWN:
-                    # Move column selection to the right
-                    if event.key == pygame.K_RIGHT:
-                        if select < 2:
-                            select += 1
-                    # Move column selection to the left
+                    sys.exit()
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        sys.exit()
+                    elif event.key == pygame.K_RIGHT:
+                        if select_option < 2:
+                            select_option += 1
                     elif event.key == pygame.K_LEFT:
-                        if select > 1:
-                            select -= 1
-                    # Enter column and execute move
+                        if select_option > 1:
+                            select_option -= 1
                     elif event.key == pygame.K_RETURN:
-                        # Start new game
-                        if select == 1:
+                        if select_option == 1:
                             new_game = True
-                        elif select == 2:
-                            exit()
+                        elif select_option == 2:
+                            sys.exit()
 
             # Draw game over screen
             graphics.draw_background(speed=100)
-            graphics.gameover_screen(winner, select)
+            graphics.gameover_screen(winner_id, select_option)
 
             # Update stuff
             clock.tick(FPS)

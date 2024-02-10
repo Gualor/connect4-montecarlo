@@ -1,9 +1,8 @@
 """Connect4 Monte Carlo Tree Search module."""
 
-from typing import Tuple, List
+from typing import Tuple, List, Optional
 import random
 import time
-import math
 import os
 
 import numpy as np
@@ -58,49 +57,111 @@ class GameBoard:
                         self.switch_turn()
                         return True
             return False
-        except:
+        except ValueError:
             return False
 
-    def check_win(self) -> int | None:
+    def check_win(self) -> Tuple[bool, Optional[int]]:
         """Check wheter the match is over.
+
+        Returns:
+            Tuple[bool, int | None]: Game has ended, winner id or None.
+        """
+        winner = GameBoard.check_rows(self.board)
+        if winner is not None:
+            return (True, winner)
+
+        winner = GameBoard.check_cols(self.board)
+        if winner is not None:
+            return (True, winner)
+
+        winner = GameBoard.check_diag(self.board)
+        if winner is not None:
+            return (True, winner)
+
+        if GameBoard.check_tie(self.board):
+            return (True, None)
+
+        return (False, None)
+
+    @staticmethod
+    def check_rows(board: np.ndarray) -> Optional[int]:
+        """Check for winner in rows.
+
+        Args:
+            board (np.ndarray): Board game.
 
         Returns:
             int | None: Winner id or None.
         """
-        # check rows
         for y in range(6):
-            row = list(self.board[y, :])
+            row = list(board[y, :])
             for x in range(4):
                 if row[x : x + 4].count(row[x]) == 4:
                     if row[x] != 0:
                         return row[x]
-        # check columns
+        return None
+
+    @staticmethod
+    def check_cols(board: np.ndarray) -> Optional[int]:
+        """Check for winner in columns.
+
+        Args:
+            board (np.ndarray): Board game.
+
+        Returns:
+            int | None: Winner id or None.
+        """
         for x in range(7):
-            col = list(self.board[:, x])
+            col = list(board[:, x])
             for y in range(3):
                 if col[y : y + 4].count(col[y]) == 4:
                     if col[y] != 0:
                         return col[y]
-        # check right diagonals
-        points = [(3, 0), (4, 0), (3, 1), (5, 0), (4, 1), (3, 2), (5, 1),
-                  (4, 2), (3, 3), (5, 2), (4, 3), (5, 3)]
-        for point in points:
-            diag = []
-            for k in range(4):
-                diag.append(self.board[point[0] - k, point[1] + k])
-            if diag.count(1) == 4 or diag.count(2) == 4:
-                return diag[0]
-        # check left diagonals
-        points = [(5, 3), (5, 4), (4, 3), (5, 5), (4, 4), (3, 3), (5, 6),
-                  (4, 5), (3, 4), (4, 6), (3, 5), (3, 6)]
-        for point in points:
-            diag = []
-            for k in range(4):
-                diag.append(self.board[point[0] - k, point[1] - k])
-            if diag.count(1) == 4 or diag.count(2) == 4:
-                return diag[0]
-        # no winner
         return None
+
+    @staticmethod
+    def check_diag(board: np.ndarray) -> Optional[int]:
+        """Check for winner in diagonals.
+
+        Args:
+            board (np.ndarray): Board game.
+
+        Returns:
+            int | None: Winner id or None.
+        """
+        # Right diagonal
+        for point in [
+            (3, 0), (4, 0), (3, 1), (5, 0), (4, 1), (3, 2), (5, 1), (4, 2),
+            (3, 3), (5, 2), (4, 3), (5, 3)
+        ]:
+            diag = []
+            for k in range(4):
+                diag.append(board[point[0] - k, point[1] + k])
+            if diag.count(1) == 4 or diag.count(2) == 4:
+                return diag[0]
+        # Left diagonal
+        for point in [
+            (5, 3), (5, 4), (4, 3), (5, 5), (4, 4), (3, 3), (5, 6), (4, 5),
+            (3, 4), (4, 6), (3, 5), (3, 6)
+        ]:
+            diag = []
+            for k in range(4):
+                diag.append(board[point[0] - k, point[1] - k])
+            if diag.count(1) == 4 or diag.count(2) == 4:
+                return diag[0]
+        return None
+
+    @staticmethod
+    def check_tie(board: np.ndarray) -> bool:
+        """Check if board is a tie.
+
+        Args:
+            board (np.ndarray): Board game.
+
+        Returns:
+            bool: Game is a tie.
+        """
+        return bool(np.all(board != 0))
 
     def apply_move(self, column: int) -> bool:
         """Apply move to board.
@@ -133,32 +194,36 @@ class MCTS:
         self.symbol = symbol
         self.t = t
 
-    def compute_move(self, node: "Node") -> Tuple[int, int] | None:
+    def compute_move(self, node: "Node") -> Tuple[int, int]:
         """Compute move using MCTS algorithm.
 
         Args:
             root (Node): Starting node.
 
         Returns:
-            Tuple[int, int] | None: Board 2D coordinate.
+            Tuple[int, int]: Board 2D coordinate.
         """
         time0 = time.time()
         while (time.time() - time0) < self.t:
             # selection and expansion
             leaf = self.select(node)
+            if leaf is None:
+                return (-1, -1)
             # simulation
             simulation_result = self.rollout(leaf)
             # backpropagation
             self.backpropagate(leaf, simulation_result)
         # from next best state get move coordinates
         selected = self.best_child(node)
+        if selected is None:
+            return (-1, -1)
         for j in range(6):
             for i in range(7):
                 if selected.board[j][i] != node.board[j][i]:
                     return (j, i)
-        return None
+        return (-1, -1)
 
-    def select(self, node: "Node") -> "Node":
+    def select(self, node: "Node") -> Optional["Node"]:
         """Node selection and expansion phase.
 
         Args:
@@ -167,26 +232,22 @@ class MCTS:
         Returns:
             Node: Selected node.
         """
-        # if all children of node has been expanded
+        # if all children of node have been expanded
         # select best one according to uct value
         while self.fully_expanded(node):
             tmp = self.select_uct(node)
-            # if select_uct returns back the node break
+            # break if select_uct returns the same node back
             if tmp == node:
                 break
-            # if not, keep exploring the tree
-            else:
-                node = tmp
+            node = tmp
         # if node is terminal, return it
         if node.terminal:
             return node
-        else:
-            # expand node and return it for rollout
-            node.add_child()
-            if node.children:
-                return self.pick_unvisited(node.children)
-            else:
-                return node
+        # expand node and return it for rollout
+        node.add_child()
+        if node.children:
+            return self.pick_unvisited(node.children)
+        return node
 
     def select_uct(self, node: "Node") -> "Node":
         """Select node with best UCT value.
@@ -197,19 +258,17 @@ class MCTS:
         Returns:
             Node: Best child.
         """
-        best_uct = -10000000
+        best_uct = -np.inf
         best_node = None
         for child in node.children:
-            uct = (child.Q / child.N) + \
-                2 * math.sqrt((math.log(node.N)) / child.N)
+            uct = (child.q / child.n) + 2 * np.sqrt((np.log(node.n)) / child.n)
             if uct > best_uct:
                 best_uct = uct
                 best_node = child
         # Avoid error if node has no children
         if best_node is None:
             return node
-        else:
-            return best_node
+        return best_node
 
     def fully_expanded(self, node: "Node") -> bool:
         """Check whether a node is fully expanded.
@@ -225,13 +284,12 @@ class MCTS:
         if list(node.board[5]).count(0) == len(node.children):
             # check if every node has been visited
             for child in node.children:
-                if child.N == 0:
+                if child.n == 0:
                     visited = False
             return visited
-        else:
-            return False
+        return False
 
-    def pick_unvisited(self, children: List["Node"]) -> "Node" | None:
+    def pick_unvisited(self, children: List["Node"]) -> Optional["Node"]:
         """Pick first unexplored child node.
 
         Args:
@@ -241,7 +299,7 @@ class MCTS:
             Node: Unexplored node or None.
         """
         for child in children:
-            if child.N == 0:
+            if child.n == 0:
                 return child
         return None
 
@@ -271,7 +329,6 @@ class MCTS:
                     # check if state is terminal
                     terminal = self.result(board)
                     if terminal != 0:
-                        # print("rollout", board)
                         return terminal
                 # with no moves left return result
                 else:
@@ -290,7 +347,7 @@ class MCTS:
         Returns:
             List[np.ndarray]: List of new matrices.
         """
-        moves = list()
+        moves = []
         for i in range(7):
             if board[5, i] == 0:
                 for j in range(6):
@@ -305,7 +362,7 @@ class MCTS:
         return moves
 
     def result(self, board: np.ndarray) -> int:
-        """Get game result from board.
+        """Get game result from terminal board.
 
         Args:
             board (np.ndarray): Game matrix.
@@ -313,49 +370,19 @@ class MCTS:
         Returns:
             int: Game result.
         """
-        winner = None
-        # check rows
-        for y in range(6):
-            row = list(board[y, :])
-            for x in range(4):
-                if row[x : x + 4].count(row[x]) == 4:
-                    if row[x] != 0:
-                        winner = row[x]
-        # check columns
-        for x in range(7):
-            col = list(board[:, x])
-            for y in range(3):
-                if col[y : y + 4].count(col[y]) == 4:
-                    if col[y] != 0:
-                        winner = col[y]
-        # check right diagonals
-        points = [(3, 0), (4, 0), (3, 1), (5, 0), (4, 1), (3, 2), (5, 1),
-                  (4, 2), (3, 3), (5, 2), (4, 3), (5, 3)]
-        for point in points:
-            diag = []
-            for k in range(4):
-                diag.append(board[point[0] - k, point[1] + k])
-            if diag.count(1) == 4 or diag.count(2) == 4:
-                winner = diag[k]
-        # check left diagonals
-        points = [(5, 3), (5, 4), (4, 3), (5, 5), (4, 4), (3, 3), (5, 6),
-                  (4, 5), (3, 4), (4, 6), (3, 5), (3, 6),]
-        for point in points:
-            diag = list()
-            for k in range(4):
-                diag.append(board[point[0] - k, point[1] - k])
-            if diag.count(1) == 4 or diag.count(2) == 4:
-                winner = diag[k]
-        # Tie
-        if winner is None:
-            return 0
-        else:
-            # Win
-            if self.symbol == winner:
-                return 1
-            # Defeat
-            else:
-                return -1
+        winner = GameBoard.check_rows(board)
+        if winner is not None:
+            return 1 if winner == self.symbol else -1
+
+        winner = GameBoard.check_cols(board)
+        if winner is not None:
+            return 1 if winner == self.symbol else -1
+
+        winner = GameBoard.check_diag(board)
+        if winner is not None:
+            return 1 if winner == self.symbol else -1
+
+        return 0
 
     def backpropagate(self, node: "Node", result: int) -> None:
         """Update recursively node visits and scores from leaf to root.
@@ -366,20 +393,19 @@ class MCTS:
         """
         # add result when AI's turn
         if node.turn == self.symbol:
-            node.Q += result
+            node.q += result
         # or else subtract it
         else:
-            node.Q -= result
+            node.q -= result
         # increment visit number by 1
-        node.N += 1
+        node.n += 1
         # stop if node is root
         if node.parent is None:
             return
-        else:
-            # call function recursively on parent
-            self.backpropagate(node.parent, result)
+        # call function recursively on parent
+        self.backpropagate(node.parent, result)
 
-    def best_child(self, node: "Node") -> "Node" | None:
+    def best_child(self, node: "Node") -> Optional["Node"]:
         """Get child node with largest number of visits.
 
         Args:
@@ -391,8 +417,8 @@ class MCTS:
         max_visit = 0
         best_node = None
         for child in node.children:
-            if child.N > max_visit:
-                max_visit = child.N
+            if child.n > max_visit:
+                max_visit = child.n
                 best_node = child
         return best_node
 
@@ -401,10 +427,10 @@ class Node:
     """Monte Carlo tree node class."""
 
     def __init__(
-        self, parent: "Node" | None, board: np.ndarray, turn: int
+        self, parent: Optional["Node"], board: np.ndarray, turn: int
     ) -> None:
-        self.Q = 0  # sum of rollout outcomes
-        self.N = 0  # number of visits
+        self.q = 0  # sum of rollout outcomes
+        self.n = 0  # number of visits
         self.parent = parent
         self.board = board
         # root is always opponent's turn
@@ -412,10 +438,10 @@ class Node:
             self.turn = 2
         else:
             self.turn = 1
-        # no children has been expanded yet
-        self.children = []
-        self.expanded = False
+        # no children have been expanded yet
+        self.children: List["Node"] = []
         self.terminal = self.check_terminal()
+        self.expanded = False
 
     def check_terminal(self) -> bool:
         """Check whether node is a leaf.
@@ -423,42 +449,18 @@ class Node:
         Returns:
             bool: Node is a leaf.
         """
-        # check rows
-        for y in range(6):
-            row = list(self.board[y, :])
-            for x in range(4):
-                if row[x : x + 4].count(row[x]) == 4:
-                    if row[x] != 0:
-                        return True
-        # check columns
-        for x in range(7):
-            col = list(self.board[:, x])
-            for y in range(3):
-                if col[y : y + 4].count(col[y]) == 4:
-                    if col[y] != 0:
-                        return True
-        # check right diagonals
-        points = [(3, 0), (4, 0), (3, 1), (5, 0), (4, 1), (3, 2), (5, 1),
-                  (4, 2), (3, 3), (5, 2), (4, 3), (5, 3)]
-        for point in points:
-            diag = list()
-            for k in range(4):
-                diag.append(self.board[point[0] - k, point[1] + k])
-            if diag.count(1) == 4 or diag.count(2) == 4:
-                return True
-        # check left diagonals
-        points = [(5, 3), (5, 4), (4, 3), (5, 5), (4, 4), (3, 3), (5, 6),
-                  (4, 5), (3, 4), (4, 6), (3, 5), (3, 6)]
-        for point in points:
-            diag = []
-            for k in range(4):
-                diag.append(self.board[point[0] - k, point[1] - k])
-            if diag.count(1) == 4 or diag.count(2) == 4:
-                return True
-        # no moves left
-        if np.all(self.board != 0):
+        if GameBoard.check_rows(self.board):
             return True
-        # no winner
+
+        if GameBoard.check_cols(self.board):
+            return True
+
+        if GameBoard.check_diag(self.board):
+            return True
+
+        if GameBoard.check_tie(self.board):
+            return True
+
         return False
 
     def add_child(self) -> None:
@@ -467,7 +469,7 @@ class Node:
         if self.expanded:
             return
         # get board of every child
-        child_board = list()
+        child_board = []
         for child in self.children:
             child_board.append(child.board)
         # find new child
@@ -482,22 +484,18 @@ class Node:
                                 if not self.compare_children(tmp, child_board):
                                     self.children.append(Node(self, tmp, 1))
                                     return
-                                else:
-                                    break
-                            else:
-                                self.children.append(Node(self, tmp, 1))
-                                return
+                                break
+                            self.children.append(Node(self, tmp, 1))
+                            return
                         else:
                             tmp[j, i] = 1
                             if child_board:
                                 if not self.compare_children(tmp, child_board):
                                     self.children.append(Node(self, tmp, 2))
                                     return
-                                else:
-                                    break
-                            else:
-                                self.children.append(Node(self, tmp, 2))
-                                return
+                                break
+                            self.children.append(Node(self, tmp, 2))
+                            return
         # no more children
         self.expanded = True
         return
@@ -520,51 +518,45 @@ class Node:
         return False
 
 
-# Run this script to play Connect 4 against Monte Carlo AI
-# with graphics printed out on the console with ASCII characters
 if __name__ == "__main__":
+
     # Begin new game
     while True:
-        # Classes declaration
-        gameBoard = GameBoard(cpu=1)
-        monteCarlo = MCTS(symbol=1, t=5)
+        game_board = GameBoard(cpu=1)
+        monte_carlo = MCTS(symbol=1, t=5)
 
         # Game loop
         while True:
-            # Print out the updated game board
-            gameBoard.show()
+            game_board.show()
 
             # Check game over
-            winner = gameBoard.check_win()
-            if winner is not None:
-                if winner == gameBoard.cpu:
+            game_over, winner_id = game_board.check_win()
+            if game_over is True:
+                if winner_id is None:
+                    print("\n\nTIE!!!")
+                elif winner_id == game_board.cpu:
                     print("\n\nMONTE CARLO WON!!!")
                 else:
                     print("\n\nYOU WON!!!")
                 break
-            else:
-                if list(gameBoard.board.flatten()).count(0) == 0:
-                    print("\n\nTIE!!!")
-                    break
 
             # Monte Carlo turn
-            if gameBoard.turn == monteCarlo.symbol:
-                # initialiaze root node
+            if game_board.turn == monte_carlo.symbol:
                 root = Node(
-                    parent=None, board=gameBoard.board, turn=monteCarlo.symbol)
-                # compute best move with monte carlo tree search
-                move = monteCarlo.compute_move(root)
-                # update game board
-                gameBoard.board[move[0], move[1]] = monteCarlo.symbol
-                gameBoard.switch_turn()
+                    parent=None,
+                    board=game_board.board,
+                    turn=monte_carlo.symbol
+                )
+                mcts_move = monte_carlo.compute_move(root)
+                game_board.board[mcts_move] = monte_carlo.symbol
+                game_board.switch_turn()
+
             # Human turn
             else:
-                gameBoard.play()
+                game_board.play()
 
         # Rematch
-        print("\n\nDo you want to play again? [Yes/No]", end=" ")
+        print("\nDo you want to play again? [Yes/No]", end=" ")
         ans = input()
-        if ans in ["Yes", "yes", "y"]:
-            continue
-        else:
+        if ans not in ["Yes", "yes", "y"]:
             break
