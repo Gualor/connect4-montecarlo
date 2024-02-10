@@ -1,2 +1,2 @@
-pygame==1.9.6
-numpy==1.17.3
+numpy>=1.26.3
+pygame>=2.5.2
